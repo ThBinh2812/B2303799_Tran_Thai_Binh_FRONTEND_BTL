@@ -1,10 +1,10 @@
 <script setup>
-import { useNotification } from "naive-ui";
 import { ref, watch, computed } from 'vue';
 import axios from "axios";
 import createBookRules from "@/rules/bookRules";
+import { useNotify } from '@/utils/notify';
 
-const notification = useNotification();
+const messageType = useNotify();
 const formRef = ref(null);
 
 const props = defineProps({
@@ -73,6 +73,7 @@ const checkBookExist = async (masach) => {
   }
 };
 
+// Tạo rules validate
 const rules = createBookRules({
   localBook,
   isEdit: props.isEdit,
@@ -83,13 +84,9 @@ const rules = createBookRules({
 const handleSubmit = async () => {
   formRef.value?.validate(async (errors) => {
     if (errors) {
-      notification.error({
-        title: "Lỗi",
-        content: "Vui lòng nhập đầy đủ và đúng thông tin!",
-        duration: 3000,
-      });
+      messageType.error("Vui lòng nhập đầy đủ và đúng thông tin!");
       return;
-    }
+    };
 
     try {
       const formData = new FormData();
@@ -100,47 +97,35 @@ const handleSubmit = async () => {
         formData.append("cover", selectedFile.value);
       }
 
+      let res;
       if (props.isEdit) {
-        // Edit
-        await axios.put(
+        res = await axios.put(
           `${import.meta.env.VITE_DB_URL}/api/books/${localBook.value.MASACH}`,
           formData,
           { headers: { "Content-Type": "multipart/form-data" } }
         );
-
-        notification.success({
-          title: "Thành công",
-          content: "Cập nhật sách thành công!",
-          duration: 3000,
-        });
       } else {
-        // Add
-        await axios.post(
+        res = await axios.post(
           `${import.meta.env.VITE_DB_URL}/api/books`,
           formData,
           { headers: { "Content-Type": "multipart/form-data" } }
         );
-
-        notification.success({
-          title: "Thành công",
-          content: "Thêm sách mới thành công!",
-          duration: 3000,
-        });
       }
+      // Send msg
+      messageType[res.data.status]?.(res.data.message);
 
       emit("reload");
       emit("close");
       visible.value = false;
+
     } catch (error) {
       console.error(error);
-      notification.error({
-        title: "Lỗi",
-        content: "Có lỗi xảy ra khi lưu sách!",
-        duration: 3000,
-      });
+      const msg = error.response?.data?.message || "Có lỗi xảy ra khi lưu sách!";
+      messageType.error(msg);
     }
   });
 };
+
 </script>
 
 <template>
@@ -167,27 +152,44 @@ const handleSubmit = async () => {
       </n-form-item>
 
       <n-form-item label="Tên sách" path="TENSACH">
-        <n-input v-model:value="localBook.TENSACH" placeholder="Nhập tên sách..." />
+        <n-input 
+          v-model:value="localBook.TENSACH" 
+          placeholder="Nhập tên sách..." />
       </n-form-item>
 
       <n-form-item label="Mô tả" path="MOTA">
-        <n-input v-model:value="localBook.MOTA" type="textarea" placeholder="Nhập mô tả..." />
+        <n-input 
+          v-model:value="localBook.MOTA" 
+          type="textarea" 
+          placeholder="Nhập mô tả..." />
       </n-form-item>
 
       <n-form-item label="Đơn giá" path="DONGIA">
-        <n-input v-model:value="localBook.DONGIA" type="number" placeholder="Nhập đơn giá..." />
+        <n-input 
+          v-model:value="localBook.DONGIA" 
+          type="number" 
+          placeholder="Nhập đơn giá..." />
       </n-form-item>
 
       <n-form-item label="Số lượng" path="SOQUYEN">
-        <n-input v-model:value="localBook.SOQUYEN" type="number" placeholder="Nhập số lượng..." />
+        <n-input 
+          v-model:value="localBook.SOQUYEN" 
+          type="number" 
+          placeholder="Nhập số lượng..." />
       </n-form-item>
 
       <n-form-item label="Còn lại" path="CONLAI">
-        <n-input v-model:value="localBook.CONLAI" type="number" placeholder="Nhập số lượng còn lại..." />
+        <n-input 
+          v-model:value="localBook.CONLAI" 
+          type="number" 
+          placeholder="Nhập số lượng còn lại..." />
       </n-form-item>
 
       <n-form-item label="Năm xuất bản" path="NAMXUATBAN">
-        <n-input v-model:value="localBook.NAMXUATBAN" type="number" placeholder="Nhập năm xuất bản..." />
+        <n-input 
+          v-model:value="localBook.NAMXUATBAN" 
+          type="number" 
+          placeholder="Nhập năm xuất bản..." />
       </n-form-item>
 
       <n-form-item label="Nhà xuất bản" path="MANXB">
@@ -200,11 +202,16 @@ const handleSubmit = async () => {
       </n-form-item>
 
       <n-form-item label="Tác giả" path="TACGIA">
-        <n-input v-model:value="localBook.TACGIA" placeholder="Nhập tên tác giả..." />
+        <n-input 
+          v-model:value="localBook.TACGIA" 
+          placeholder="Nhập tên tác giả..." />
       </n-form-item>
 
       <n-form-item label="Ảnh bìa" path="cover">
-        <input type="file" @change="handleFileChange" accept="image/*" />
+        <input 
+          type="file" 
+          @change="handleFileChange" 
+          accept="image/*" />
       </n-form-item>
     </n-form>
 
@@ -217,4 +224,5 @@ const handleSubmit = async () => {
       </div>
     </template>
   </n-modal>
+
 </template>

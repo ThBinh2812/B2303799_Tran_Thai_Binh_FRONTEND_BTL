@@ -2,41 +2,14 @@
 import { ref, h, computed, onMounted, resolveComponent } from 'vue';
 import { getBooks, deleteBook } from '@/services/books.api.js';
 import { getPublishers } from '@/services/publishers.api';
-import { NButton, NTag, NDataTable, NInput, NSelect, NPagination, useNotification } from 'naive-ui';
+import { NButton, NTag, NDataTable, NInput, NSelect, NPagination } from 'naive-ui';
 import BookModal from '@/components/BookModal.vue';
 import LoadingOverlay from '@/components/loadingOverlay.vue';
+import { useNotify } from '@/utils/notify';
 
 const DB_URL = import.meta.env.VITE_DB_URL;
 const FontAwesomeIcon = resolveComponent('font-awesome-icon');
-
-// ====== Notification ======
-const notification = useNotification();
-const messageType = {
-  success: (msg) =>
-    notification.success({
-      title: 'Thành công',
-      content: msg,
-      duration: 3000,
-    }),
-  error: (msg) =>
-    notification.error({
-      title: 'Lỗi',
-      content: msg,
-      duration: 3000,
-    }),
-  warning: (msg) =>
-    notification.warning({
-      title: 'Cảnh báo',
-      content: msg,
-      duration: 3000,
-    }),
-  info: (msg) =>
-    notification.info({
-      title: 'Thông báo',
-      content: msg,
-      duration: 3000,
-    }),
-};
+const messageType = useNotify();
 
 // ====== Dữ liệu ======
 const books = ref([]);
@@ -49,14 +22,15 @@ const fetchBooks = async () => {
   const res = await getBooks();
   books.value = res.data;
 };
-const fetchPublisher = async () => {
-  const res = await getPublishers();
-  publishers.value = res.data;
+
+const fetchPublisher = async () => { 
+  const res = await getPublishers(); 
+  publishers.value = res.data; 
 };
 
 function getPublisherName(mnxb) {
-  const found = publishers.value.find((pub) => pub.MANXB === mnxb);
-  return found ? found.TENNXB : mnxb;
+  const found = publishers.value.find((pub) => pub.MANXB === mnxb)
+  return found ? found.TENNXB : mnxb
 };
 
 // ====== Mouted ======
@@ -196,7 +170,7 @@ const columns = [
   },
 ];
 
-// ====== Filter và Paging ======
+// ====== Filtering và Paging ======
 const searchText = ref('');
 const selectedPublisher = ref('all');
 const selectedStatus = ref('all');
@@ -231,7 +205,7 @@ const filteredBooks = computed(() => {
       (selectedStatus.value === 'in-stock' && book.CONLAI > 0) ||
       (selectedStatus.value === 'out-stock' && book.CONLAI === 0)
 
-    return matchSearch && matchPublisher && matchStatus
+    return matchSearch && matchPublisher && matchStatus;
   });
 });
 
@@ -285,10 +259,10 @@ const handleDeleteBook = async (id) => {
 
   try {
     const res = await deleteBook(id)
-    messageType[res.status]?.(res.message)
+    messageType[res.status]?.(res.message);
 
     if (res.status === 'success') {
-      await fetchBooks()
+      await fetchBooks();
     }
 // eslint-disable-next-line no-unused-vars
   } catch (error) {

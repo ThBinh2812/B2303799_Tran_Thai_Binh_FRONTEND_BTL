@@ -23,7 +23,7 @@ defineProps({
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 2000;
+  z-index: 9999;
 }
 
 .spinner {
