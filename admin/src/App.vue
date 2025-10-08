@@ -1,18 +1,19 @@
 <script setup>
 import { RouterView } from 'vue-router';
-import { NMessageProvider } from "naive-ui";
+import { NNotificationProvider } from 'naive-ui';
 
 </script>
 
 <template>
-  <n-message-provider
+  <n-notification-provider
     placement="top-right"
     :max="3"
     :duration="3000"
     :closable="true"
   >
     <RouterView />
-  </n-message-provider>
+  </n-notification-provider>
+
 </template>
 
 <style>
