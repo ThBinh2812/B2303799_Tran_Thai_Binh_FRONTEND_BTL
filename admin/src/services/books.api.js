@@ -30,9 +30,9 @@ export const addBook = async (formData) => {
         message: error.message,
         data: null,
       }
-    )
+    );
   }
-}
+};
 
 export const deleteBook = async (id) => {
   try {
@@ -62,6 +62,6 @@ export const updateBook = async (id, formData) => {
         message: error.message,
         data: null,
       }
-    )
+    );
   }
-}
+};

@@ -1,57 +1,128 @@
 <script setup>
-import { ref, watch } from "vue";
+import { useMessage } from "naive-ui";
+import { ref, watch, computed } from 'vue';
+import axios from "axios";
+
+const message = useMessage();
+const formRef = ref(null);
 
 const props = defineProps({
   show: Boolean,
   isEdit: Boolean,
   book: Object,
-  rules: Object,
+  publishers: Array,
+  dbUrl: String
 });
 
-const emit = defineEmits(["close", "submit"]);
+const emit = defineEmits(["close", "reload"]);
 
-// Đồng bộ hiển thị modal
-const visible = ref(props.show);
-watch(
-  () => props.show,
-  (newVal) => {
-    visible.value = newVal;
+// ====== Load nhà xuất bản =======
+const publisherOptions = computed(() => {
+  if (!props.publishers) return [];
+  return props.publishers.map(pub => ({
+    label: pub.TENNXB,
+    value: pub.MANXB
+  }));
+});
+
+// ====== Validate ======
+const checkBookExist = async (masach) => {
+  if (!masach) return false;
+  try {
+    const res = await axios.get(`${import.meta.env.VITE_DB_URL}/api/books/${masach}`);
+    return !!res.data.data;
+  } catch {
+    return false;
   }
-);
+};
 
-// Đồng bộ dữ liệu sách
+const rules = {
+  MASACH: [
+    {
+      required: true,
+      message: "Mã sách không được để trống",
+      trigger: ["blur", "input"],
+    },
+    {
+      validator: async (rule, value) => {
+        if (!value || props.isEdit) return Promise.resolve();
+        const existed = await checkBookExist(value);
+        if (existed) return Promise.reject("Mã sách đã tồn tại");
+        return Promise.resolve();
+      },
+      trigger: ["blur", "input"],
+    },
+  ],
+  TENSACH: [
+    {
+      required: true,
+      message: "Tên sách không được để trống",
+      trigger: ["blur", "input"],
+    },
+  ],
+  SOQUYEN: [
+    {
+      validator: (rule, value) => {
+        if (!value && value !== 0) return Promise.reject("Số lượng không được để trống");
+        if (isNaN(value)) return Promise.reject("Số lượng phải là số");
+        if (value <= 0) return Promise.reject("Số lượng phải lớn hơn 0");
+        return Promise.resolve();
+      },
+      trigger: ["blur", "input"]
+    }
+  ],
+  DONGIA: [
+    {
+      validator: (rule, value) => {
+        if (!value && value !== 0) return Promise.reject("Đơn giá không được để trống");
+        if (isNaN(value)) return Promise.reject("Đơn giá phải là số");
+        if (value <= 0) return Promise.reject("Đơn giá phải lớn hơn 0");
+        return Promise.resolve();
+      },
+      trigger: ["blur", "input"]
+    }
+  ],
+  CONLAI: [
+    {
+      validator: (rule, value) => {
+        if (!value && value !== 0) return Promise.reject("Số lượng còn lại không được để trống");
+        if (isNaN(value)) return Promise.reject("Số lượng còn lại phải là số");
+        if (Number(value) > Number(localBook.value.SOQUYEN)) {
+          return Promise.reject("Số lượng còn lại không hợp lệ");
+        }
+        return Promise.resolve();
+      },
+      trigger: ["blur", "input"]
+    }
+  ],
+};
+
+// ====== Đồng bộ props & dữ liệu ======
+const visible = ref(props.show);
+watch(() => props.show, (val) => (visible.value = val));
+
 const defaultBook = {
   MASACH: "",
   TENSACH: "",
   DONGIA: null,
   SOQUYEN: null,
   CONLAI: null,
-  MANXB: "",
+  MANXB: null,
   TACGIA: "",
   NAMXUATBAN: null,
   cover: "",
   MOTA: ""
 };
 
+// Clone book từ props
 const localBook = ref({ ...defaultBook, ...props.book });
-watch(
-  () => props.book,
-  (newBook) => {
-    localBook.value = { ...defaultBook, ...newBook };
-  },
-  { deep: true }
-);
+watch(() => props.book, (newVal) => {
+  localBook.value = { ...defaultBook, ...newVal };
+  if (!localBook.value.MANXB) {
+      localBook.value.MANXB = null;
+    }
+}, { deep: true });
 
-const handleSubmit = () => {
-  const formData = new FormData();
-  Object.entries(localBook.value).forEach(([key, value]) => {
-    formData.append(key, value);
-  });
-  if (selectedFile.value) {
-    formData.append("cover", selectedFile.value);
-  }
-  emit("submit", formData);
-};
 
 // Xử lý file ảnh
 const selectedFile = ref(null);
@@ -59,7 +130,57 @@ function handleFileChange(e) {
   selectedFile.value = e.target.files[0];
 }
 
+
+// ====== Call API =======
+const handleSubmit = async () => {
+  // Validate
+  formRef.value?.validate(async (errors) => {
+    if (errors) {
+      message.error("Vui lòng nhập đầy đủ và đúng thông tin!");
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      Object.entries(localBook.value).forEach(([key, val]) => {
+        formData.append(key, val ?? "");
+      });
+      if (selectedFile.value) {
+        formData.append("cover", selectedFile.value);
+      }
+
+      if (props.isEdit) {
+        // Edit
+        await axios.put(
+          `${import.meta.env.VITE_DB_URL}/api/books/${localBook.value.MASACH}`,
+          formData, {
+            headers: { "Content-Type": "multipart/form-data" },
+          });
+
+          message.success("Cập nhật sách thành công!");
+      } else {
+        // Add
+        await axios.post(
+          `${import.meta.env.VITE_DB_URL}/api/books`,
+          formData, {
+            headers: { "Content-Type": "multipart/form-data" },
+          });
+
+        message.success("Thêm sách mới thành công!");
+      };
+
+      emit("reload");
+      emit("close");
+      visible.value = false;
+
+    } catch (error) {
+      console.error(error);
+      message.error("Có lỗi xảy ra khi lưu sách!");
+    }
+  });
+};
 </script>
+
 
 <template>
   <n-modal
@@ -69,67 +190,95 @@ function handleFileChange(e) {
     style="width: 500px; max-height: 80vh; overflow-y: auto;"
     @update:show="val => { if (!val) emit('close') }"
   >
-    <n-form :model="localBook" label-placement="top">
+    <n-form
+      ref="formRef" 
+      :model="localBook" 
+      :rules="rules" 
+      label-placement="top"
+      validate-on-input
+    >
       <n-form-item label="Mã sách" path="MASACH">
         <n-input
-          v-model:value="localBook.MASACH"
-          placeholder="Nhập mã sách..."
-          :disabled="props.isEdit"
+          v-model:value="localBook.MASACH" 
+          placeholder="Nhập mã sách..." 
+          :disabled="props.isEdit" 
         />
       </n-form-item>
-      <n-form-item label="Tên sách">
-        <n-input
+
+      <n-form-item label="Tên sách" path="TENSACH">
+        <n-input 
           v-model:value="localBook.TENSACH" 
-          placeholder="Nhập tên sách..." />
-      </n-form-item>
-      <n-form-item label="Mô tả">
-        <n-input
-        v-model:value="localBook.MOTA"
-        type="textarea"
-        placeholder="Nhập mô tả sách..."
+          placeholder="Nhập tên sách..." 
         />
       </n-form-item>
-      <n-form-item label="Đơn giá">
+
+      <n-form-item label="Mô tả" path="MOTA">
         <n-input 
-        v-model:value="localBook.DONGIA" 
-        type="number"
-        placeholder="Nhập đơn giá..." />
+          v-model:value="localBook.MOTA" 
+          type="textarea" 
+          placeholder="Nhập mô tả..." 
+        />
       </n-form-item>
-      <n-form-item label="Số lượng">
+
+      <n-form-item label="Đơn giá" path="DONGIA">
         <n-input 
-        v-model:value="localBook.SOQUYEN" 
-        type="number"
-          placeholder="Nhập số lượng..." />
-        </n-form-item>
-        <n-form-item label="Còn lại">
-          <n-input 
+          v-model:value="localBook.DONGIA" 
+          type="number" 
+          placeholder="Nhập đơn giá..." 
+        />
+      </n-form-item>
+
+      <n-form-item label="Số lượng" path="SOQUYEN">
+        <n-input 
+          v-model:value="localBook.SOQUYEN" 
+          type="number" 
+          placeholder="Nhập số lượng..." 
+        />
+      </n-form-item>
+
+      <n-form-item label="Còn lại" path="CONLAI">
+        <n-input 
           v-model:value="localBook.CONLAI" 
-          type="number"
-          placeholder="Nhập số lượng còn lại..." />
-        </n-form-item>
-        <n-form-item label="Năm xuất bản">
-          <n-input 
+          type="number" 
+          placeholder="Nhập số lượng còn lại..." 
+        />
+      </n-form-item>
+
+      <n-form-item label="Năm xuất bản" path="NAMXUATBAN">
+        <n-input 
           v-model:value="localBook.NAMXUATBAN" 
-          type="number"
-          placeholder="Nhập năm xuất bản..." />
-        </n-form-item>
-        <n-form-item label="Nhà xuất bản">
-          <n-input 
+          type="number" 
+          placeholder="Nhập năm xuất bản..." 
+        />
+      </n-form-item>
+
+      <n-form-item label="Nhà xuất bản" path="MANXB">
+        <n-select
           v-model:value="localBook.MANXB"
-          placeholder="Nhập tên nhà xuất bản..." />
-        </n-form-item>
-        <n-form-item label="Tác giả">
-          <n-input 
-          v-model:value="localBook.TACGIA"
-          placeholder="Nhập tên tác giả..." />
-        </n-form-item>
-        <n-form-item label="Ảnh bìa">
-          <input type="file" @change="handleFileChange" accept="image/*" />
-        </n-form-item>
-      </n-form>
+          :options="publisherOptions"
+          placeholder="Chọn nhà xuất bản"
+          clearable
+        />
+      </n-form-item>
+
+      <n-form-item label="Tác giả" path="TACGIA">
+        <n-input 
+          v-model:value="localBook.TACGIA" 
+          placeholder="Nhập tên tác giả..." 
+        />
+      </n-form-item>
+
+      <n-form-item label="Ảnh bìa" path="cover">
+        <input 
+          type="file" 
+          @change="handleFileChange" 
+          accept="image/*" 
+        />
+      </n-form-item>
+    </n-form>
 
     <template #action>
-      <div style="display:flex; justify-content: right; gap: 12px">
+      <div style="display:flex; justify-content:right; gap:12px">
         <n-button @click="emit('close')">Hủy</n-button>
         <n-button type="primary" @click="handleSubmit">
           {{ props.isEdit ? "Lưu thay đổi" : "Lưu" }}
@@ -137,4 +286,5 @@ function handleFileChange(e) {
       </div>
     </template>
   </n-modal>
+
 </template>
