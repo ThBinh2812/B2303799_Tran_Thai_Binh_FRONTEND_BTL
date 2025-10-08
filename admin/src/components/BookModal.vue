@@ -2,6 +2,7 @@
 import { useMessage } from "naive-ui";
 import { ref, watch, computed } from 'vue';
 import axios from "axios";
+import createBookRules from "@/rules/bookRules";
 
 const message = useMessage();
 const formRef = ref(null);
@@ -24,78 +25,6 @@ const publisherOptions = computed(() => {
     value: pub.MANXB
   }));
 });
-
-// ====== Validate ======
-const checkBookExist = async (masach) => {
-  if (!masach) return false;
-  try {
-    const res = await axios.get(`${import.meta.env.VITE_DB_URL}/api/books/${masach}`);
-    return !!res.data.data;
-  } catch {
-    return false;
-  }
-};
-
-const rules = {
-  MASACH: [
-    {
-      required: true,
-      message: "Mã sách không được để trống",
-      trigger: ["blur", "input"],
-    },
-    {
-      validator: async (rule, value) => {
-        if (!value || props.isEdit) return Promise.resolve();
-        const existed = await checkBookExist(value);
-        if (existed) return Promise.reject("Mã sách đã tồn tại");
-        return Promise.resolve();
-      },
-      trigger: ["blur", "input"],
-    },
-  ],
-  TENSACH: [
-    {
-      required: true,
-      message: "Tên sách không được để trống",
-      trigger: ["blur", "input"],
-    },
-  ],
-  SOQUYEN: [
-    {
-      validator: (rule, value) => {
-        if (!value && value !== 0) return Promise.reject("Số lượng không được để trống");
-        if (isNaN(value)) return Promise.reject("Số lượng phải là số");
-        if (value <= 0) return Promise.reject("Số lượng phải lớn hơn 0");
-        return Promise.resolve();
-      },
-      trigger: ["blur", "input"]
-    }
-  ],
-  DONGIA: [
-    {
-      validator: (rule, value) => {
-        if (!value && value !== 0) return Promise.reject("Đơn giá không được để trống");
-        if (isNaN(value)) return Promise.reject("Đơn giá phải là số");
-        if (value <= 0) return Promise.reject("Đơn giá phải lớn hơn 0");
-        return Promise.resolve();
-      },
-      trigger: ["blur", "input"]
-    }
-  ],
-  CONLAI: [
-    {
-      validator: (rule, value) => {
-        if (!value && value !== 0) return Promise.reject("Số lượng còn lại không được để trống");
-        if (isNaN(value)) return Promise.reject("Số lượng còn lại phải là số");
-        if (Number(value) > Number(localBook.value.SOQUYEN)) {
-          return Promise.reject("Số lượng còn lại không hợp lệ");
-        }
-        return Promise.resolve();
-      },
-      trigger: ["blur", "input"]
-    }
-  ],
-};
 
 // ====== Đồng bộ props & dữ liệu ======
 const visible = ref(props.show);
@@ -123,12 +52,28 @@ watch(() => props.book, (newVal) => {
     }
 }, { deep: true });
 
-
 // Xử lý file ảnh
 const selectedFile = ref(null);
 function handleFileChange(e) {
   selectedFile.value = e.target.files[0];
 }
+
+// ====== Validate ======
+const checkBookExist = async (masach) => {
+  if (!masach) return false;
+  try {
+    const res = await axios.get(`${import.meta.env.VITE_DB_URL}/api/books/${masach}`);
+    return !!res.data.data;
+  } catch {
+    return false;
+  }
+};
+
+const rules = createBookRules({
+  localBook,
+  isEdit: props.isEdit,
+  checkBookExist
+});
 
 
 // ====== Call API =======

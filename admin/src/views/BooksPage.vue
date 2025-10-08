@@ -268,6 +268,7 @@ const handleDeleteBook = async (id) => {
     books.value = booksRes.data
   }
 }
+
 </script>
 
 <!-- Template books -->
