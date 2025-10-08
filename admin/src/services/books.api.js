@@ -5,7 +5,7 @@ const DB_URL = import.meta.env.VITE_DB_URL
 export const getBooks = async () => {
   try {
     const res = await axios.get(`${DB_URL}/api/books`)
-    return res.data
+    return res.data;
   } catch (error) {
     return (
       error.response?.data || {
@@ -22,7 +22,7 @@ export const addBook = async (formData) => {
     const res = await axios.post(`${DB_URL}/api/books`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     })
-    return res.data
+    return res.data;
   } catch (error) {
     return (
       error.response?.data || {
@@ -54,7 +54,7 @@ export const updateBook = async (id, formData) => {
     const res = await axios.put(`${DB_URL}/api/books/${id}`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     })
-    return res.data
+    return res.data;
   } catch (error) {
     return (
       error.response?.data || {
