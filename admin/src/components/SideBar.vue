@@ -1,58 +1,44 @@
 <script setup>
-import { ref, h } from "vue";
+import { ref, watch } from "vue";
 import { useRouter } from "vue-router";
-import { NIcon } from "naive-ui";
-import { 
-  PersonOutline, 
-  PeopleOutline, 
-  BookOutline, 
-  BarChartOutline,
-  FileTrayFullOutline,
-  BusinessOutline,
-  ChevronBackOutline,
-  ChevronForwardOutline,
-} from "@vicons/ionicons5";
+import { useIcon } from "@/utils/useIcon";
 
-const router = useRouter();
-const activeKey = ref("books");
-const collapsed = ref(false);
 
-function renderIcon(icon, color = "white") {
-  return () => h(NIcon, { color }, { default: () => h(icon) });
-}
-
+const props       = defineProps({
+  collapsed: Boolean
+});
+const router      = useRouter();
+const activeKey   = ref("books");
 const menuOptions = [
   {
-    label: "Quản lý độc giả",
-    key: "readers",
-    icon: renderIcon(PersonOutline, "white")
-  },
-  {
-    label: "Quản lý nhân viên",
+    label: "Thông tin nhân viên",
     key: "employees",
-    icon: renderIcon(PeopleOutline, "white")
+    icon: () => useIcon('fa-solid fa-user-tie', '20px')
   },
   {
     label: "Nhà xuất bản",
     key: "publishers",
-    icon: renderIcon(BusinessOutline, "white")
+    icon: () => useIcon('fa-solid fa-building', '20px')
   },
   {
     label: "Quản lý sách",
     key: "books",
-    icon: renderIcon(BookOutline, "white")
+    icon: () => useIcon('fa-solid fa-book', '20px')
   },
   {
     label: "Quản lý mượn sách",
     key: "borrowRecords",
-    icon: renderIcon(FileTrayFullOutline, "white")
+    icon: () => useIcon('fa-solid fa-book-reader', '20px')
   }, 
   {
     label: "Thống kê",
     key: "statistics",
-    icon: renderIcon(BarChartOutline, "white")
+    icon: () => useIcon('fa-solid fa-chart-bar', '20px')
   }
 ];
+
+const collapsed = ref(props.collapsed);
+watch(() => props.collapsed, (val) => collapsed.value = val);
 
 const menuTheme = {
   itemTextColor: "white",
@@ -62,10 +48,6 @@ const menuTheme = {
   itemColorHover: "#003c8f",
   itemColorActive: "#0d47a1"
 };
-
-function toggleSidebar() {
-  collapsed.value = !collapsed.value;
-}
 
 // Xử lý chuyển route khi chọn menu
 function handleMenuSelect(key) {
@@ -97,15 +79,7 @@ function handleMenuSelect(key) {
         @update:value="handleMenuSelect"
       />
     </div>
-    <div style="padding: 12px; text-align: center;">
-      <button
-        @click="toggleSidebar"
-        style="background: none; border: none; cursor: pointer; color: white;"
-      >
-        <n-icon size="24">
-          <component :is="collapsed ? ChevronForwardOutline : ChevronBackOutline" />
-        </n-icon>
-      </button>
-    </div>
+
   </n-layout-sider>
+
 </template>

@@ -1,7 +1,7 @@
 <script setup>
 import { ref, watch, computed } from 'vue';
-import axios from "axios";
-import createBookRules from "@/rules/bookRules";
+import axios from 'axios';
+import createBookRules from '@/rules/bookRules';
 import { useNotify } from '@/utils/notify';
 
 const messageType = useNotify();
@@ -12,64 +12,68 @@ const props = defineProps({
   isEdit: Boolean,
   book: Object,
   publishers: Array,
-  dbUrl: String
+  dbUrl: String,
 });
 
-const emit = defineEmits(["close", "reload"]);
+const emit = defineEmits(['close', 'saved'])
 
 // ====== Load nhà xuất bản =======
 const publisherOptions = computed(() => {
-  if (!props.publishers) return [];
-  return props.publishers.map(pub => ({
+  return (props.publishers || []).map((pub) => ({
     label: pub.TENNXB,
-    value: pub.MANXB
+    value: pub.MANXB,
   }));
 });
 
 // ====== Đồng bộ props & dữ liệu ======
-const visible = ref(props.show);
-watch(() => props.show, (val) => (visible.value = val));
+const visible = ref(props.show)
+watch(
+  () => props.show,
+  (val) => (visible.value = val),
+);
 
 const defaultBook = {
-  MASACH: "",
-  TENSACH: "",
+  MASACH: '',
+  TENSACH: '',
   DONGIA: null,
   SOQUYEN: null,
   CONLAI: null,
   MANXB: null,
-  TACGIA: "",
+  TACGIA: '',
   NAMXUATBAN: null,
-  cover: "",
-  MOTA: ""
+  cover: '',
+  MOTA: '',
 };
 
-// Clone book từ props
-const localBook = ref({ ...defaultBook, ...props.book });
+// Sync book từ props
+const localBook = ref({ ...defaultBook });
 watch(
   () => props.book,
-  (newVal) => {
-    localBook.value = { ...defaultBook, ...newVal };
-    if (!localBook.value.MANXB) {
-      localBook.value.MANXB = null;
-    }
+  (newBook) => {
+    localBook.value = { 
+      ...defaultBook, 
+      ...newBook, 
+      MANXB: newBook?.MANXB ? newBook.MANXB : null
+    };
   },
-  { deep: true }
+  { immediate: true }
 );
 
+
 // Xử lý file ảnh
-const selectedFile = ref(null);
-function handleFileChange(e) {
-  selectedFile.value = e.target.files[0];
-}
+const selectedFile = ref(null)
+function handleFileUpload(e) {
+  selectedFile.value = e.target.files[0]
+};
 
 // ====== Validate ======
 const checkBookExist = async (masach) => {
-  if (!masach) return false;
+  if (!masach) return false
   try {
-    const res = await axios.get(`${import.meta.env.VITE_DB_URL}/api/books/${masach}`);
-    return !!res.data.data;
+    const res = await axios.get(`${import.meta.env.VITE_DB_URL}/api/books/${masach}`)
+    return !!res.data.data
   } catch {
-    return false;
+    return false
   }
 };
 
@@ -77,55 +81,55 @@ const checkBookExist = async (masach) => {
 const rules = createBookRules({
   localBook,
   isEdit: props.isEdit,
-  checkBookExist
+  checkBookExist,
 });
 
 // ====== Call API =======
 const handleSubmit = async () => {
   formRef.value?.validate(async (errors) => {
     if (errors) {
-      messageType.error("Vui lòng nhập đầy đủ và đúng thông tin!");
+      messageType.error('Vui lòng nhập đầy đủ và đúng thông tin!')
       return;
     };
 
+    let savedBook = null;
     try {
-      const formData = new FormData();
+      const formData = new FormData()
       Object.entries(localBook.value).forEach(([key, val]) => {
-        formData.append(key, val ?? "");
+        formData.append(key, val ?? '');
       });
       if (selectedFile.value) {
-        formData.append("cover", selectedFile.value);
-      }
+        formData.append('cover', selectedFile.value);
+      };
 
       let res;
       if (props.isEdit) {
         res = await axios.put(
           `${import.meta.env.VITE_DB_URL}/api/books/${localBook.value.MASACH}`,
           formData,
-          { headers: { "Content-Type": "multipart/form-data" } }
-        );
+          { headers: { 'Content-Type': 'multipart/form-data' } },
+        )
       } else {
-        res = await axios.post(
-          `${import.meta.env.VITE_DB_URL}/api/books`,
-          formData,
-          { headers: { "Content-Type": "multipart/form-data" } }
-        );
-      }
+        res = await axios.post(`${import.meta.env.VITE_DB_URL}/api/books`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        })
+      };
+
+      savedBook = res.data.data;
+
       // Send msg
       messageType[res.data.status]?.(res.data.message);
 
-      emit("reload");
-      emit("close");
+      emit('saved', savedBook);
+      emit('close');
       visible.value = false;
-
     } catch (error) {
       console.error(error);
-      const msg = error.response?.data?.message || "Có lỗi xảy ra khi lưu sách!";
+      const msg = error.response?.data?.message || 'Có lỗi xảy ra khi lưu sách!';
       messageType.error(msg);
     }
-  });
-};
-
+  })
+}
 </script>
 
 <template>
@@ -133,63 +137,52 @@ const handleSubmit = async () => {
     v-model:show="visible"
     preset="dialog"
     :title="props.isEdit ? 'Chỉnh sửa sách' : 'Thêm sách mới'"
-    style="width: 500px; max-height: 80vh; overflow-y: auto;"
-    @update:show="val => { if (!val) emit('close') }"
+    style="width: 500px; max-height: 80vh; overflow-y: auto"
+    @update:show="
+      (val) => {
+        if (!val) emit('close')
+      }
+    "
   >
-    <n-form
-      ref="formRef" 
-      :model="localBook" 
-      :rules="rules" 
-      label-placement="top"
-      validate-on-input
-    >
-      <n-form-item label="Mã sách" path="MASACH">
+    <n-form ref="formRef" :model="localBook" :rules="rules" label-placement="top" validate-on-input>
+      <n-form-item v-if="props.isEdit" label="Mã sách" path="MASACH">
         <n-input
-          v-model:value="localBook.MASACH" 
-          placeholder="Nhập mã sách..." 
-          :disabled="props.isEdit" 
+          v-model:value="localBook.MASACH"
+          disabled
+          placeholder="Mã sách sẽ tự động sinh"
         />
       </n-form-item>
 
       <n-form-item label="Tên sách" path="TENSACH">
-        <n-input 
-          v-model:value="localBook.TENSACH" 
-          placeholder="Nhập tên sách..." />
+        <n-input v-model:value="localBook.TENSACH" placeholder="Nhập tên sách..." />
       </n-form-item>
 
       <n-form-item label="Mô tả" path="MOTA">
-        <n-input 
-          v-model:value="localBook.MOTA" 
-          type="textarea" 
-          placeholder="Nhập mô tả..." />
+        <n-input v-model:value="localBook.MOTA" type="textarea" placeholder="Nhập mô tả..." />
       </n-form-item>
 
       <n-form-item label="Đơn giá" path="DONGIA">
-        <n-input 
-          v-model:value="localBook.DONGIA" 
-          type="number" 
-          placeholder="Nhập đơn giá..." />
+        <n-input v-model:value="localBook.DONGIA" type="number" placeholder="Nhập đơn giá..." />
       </n-form-item>
 
       <n-form-item label="Số lượng" path="SOQUYEN">
-        <n-input 
-          v-model:value="localBook.SOQUYEN" 
-          type="number" 
-          placeholder="Nhập số lượng..." />
+        <n-input v-model:value="localBook.SOQUYEN" type="number" placeholder="Nhập số lượng..." />
       </n-form-item>
 
       <n-form-item label="Còn lại" path="CONLAI">
-        <n-input 
-          v-model:value="localBook.CONLAI" 
-          type="number" 
-          placeholder="Nhập số lượng còn lại..." />
+        <n-input
+          v-model:value="localBook.CONLAI"
+          type="number"
+          placeholder="Nhập số lượng còn lại..."
+        />
       </n-form-item>
 
       <n-form-item label="Năm xuất bản" path="NAMXUATBAN">
-        <n-input 
-          v-model:value="localBook.NAMXUATBAN" 
-          type="number" 
-          placeholder="Nhập năm xuất bản..." />
+        <n-input
+          v-model:value="localBook.NAMXUATBAN"
+          type="number"
+          placeholder="Nhập năm xuất bản..."
+        />
       </n-form-item>
 
       <n-form-item label="Nhà xuất bản" path="MANXB">
@@ -198,6 +191,7 @@ const handleSubmit = async () => {
           :options="publisherOptions"
           placeholder="Chọn nhà xuất bản"
           clearable
+          :value-key="'value'"
         />
       </n-form-item>
 
@@ -207,22 +201,18 @@ const handleSubmit = async () => {
           placeholder="Nhập tên tác giả..." />
       </n-form-item>
 
-      <n-form-item label="Ảnh bìa" path="cover">
-        <input 
-          type="file" 
-          @change="handleFileChange" 
-          accept="image/*" />
+      <n-form-item label="Ảnh bìa" path="cover" label-placement="top">
+        <input type="file" @change="handleFileUpload" accept="image/*" />
       </n-form-item>
     </n-form>
 
     <template #action>
-      <div style="display:flex; justify-content:right; gap:12px">
+      <div style="display: flex; justify-content: right; gap: 12px">
         <n-button @click="emit('close')">Hủy</n-button>
         <n-button type="primary" @click="handleSubmit">
-          {{ props.isEdit ? "Lưu thay đổi" : "Lưu" }}
+          {{ props.isEdit ? 'Lưu thay đổi' : 'Lưu' }}
         </n-button>
       </div>
     </template>
   </n-modal>
-
 </template>

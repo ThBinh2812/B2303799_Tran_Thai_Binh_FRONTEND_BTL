@@ -1,4 +1,4 @@
-import axios from 'axios'
+import axios from 'axios';
 
 const DB_URL = import.meta.env.VITE_DB_URL
 

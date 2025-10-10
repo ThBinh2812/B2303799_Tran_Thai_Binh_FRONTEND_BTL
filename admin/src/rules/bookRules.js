@@ -50,6 +50,7 @@ const createBookRules = ({ localBook, isEdit, checkBookExist }) => {
         validator: (rule, value) => {
           if (!value && value !== 0) return Promise.reject('Số lượng còn lại không được để trống');
           if (isNaN(value)) return Promise.reject('Số lượng còn lại phải là số');
+          if (value < 0) return Promise.reject('Số lượng còn lại phải lớn hơn hoặc bằng 0');
           if (Number(value) > Number(localBook.value.SOQUYEN)) {
             return Promise.reject('Số lượng còn lại không hợp lệ');
           };
