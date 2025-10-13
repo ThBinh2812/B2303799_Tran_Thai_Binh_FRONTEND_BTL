@@ -2,10 +2,9 @@
 defineProps({
   show: {
     type: Boolean,
-    default: false
-  }
-});
-
+    default: false,
+  },
+})
 </script>
 
 <template>
@@ -13,7 +12,6 @@ defineProps({
     <div class="spinner"></div>
   </div>
 </template>
-
 
 <style scoped>
 .loading-overlay {

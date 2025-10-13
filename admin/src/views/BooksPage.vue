@@ -1,42 +1,42 @@
 <script setup>
 import { ref, h, computed, onMounted, resolveComponent, watch } from 'vue';
 import { getBooks, deleteBook } from '@/services/books.service.js';
-import { getPublishers } from '@/services/publishers.service';
+import { getPublishers } from '@/services/publishers.service.js';
 import { NButton, NTag, NDataTable, NInput, NSelect, NPagination } from 'naive-ui';
 import BookModal from '@/components/BookModal.vue';
-import LoadingOverlay from '@/components/loadingOverlay.vue';
 import { useNotify } from '@/utils/notify';
 import { useIcon } from '@/utils/useIcon';
+import LoadingOverLay from '@/components/LoadingOverLay.vue';
 
 const DB_URL = import.meta.env.VITE_DB_URL;
 const messageType = useNotify();
 
 // ====== Dữ liệu ======
-const books          = ref([]);
-const publishers     = ref([]);
-const loading        = ref(false);
+const books = ref([]);
+const publishers = ref([]);
+const loading = ref(false);
 const actionsDisable = ref(false);
 
 // ====== Lấy dữ liệu ======
-const fetchBooks     = async () => {
-  const res          = await getBooks();
-  books.value        = res.data;
+const fetchBooks = async () => {
+  const res = await getBooks();
+  books.value = res.data;
 };
 
-const fetchPublisher = async () => { 
-  const res          = await getPublishers(); 
-  publishers.value   = res.data; 
+const fetchPublisher = async () => {
+  const res = await getPublishers();
+  publishers.value = res.data;
 };
 
 function getPublisherName(mnxb) {
-  const found = publishers.value.find((pub) => pub.MANXB === mnxb)
-  return found ? found.TENNXB : mnxb
-};
+  const found = publishers.value.find((pub) => pub.MANXB === mnxb);
+  return found ? found.TENNXB : mnxb;
+}
 
 // ====== Mouted ======
 onMounted(() => {
-  fetchBooks()
-  fetchPublisher()
+  fetchBooks();
+  fetchPublisher();
 });
 
 // ====== Trạng thái của Options lọc sách ======
@@ -69,13 +69,12 @@ const columns = [
         ? row.cover.startsWith('/imgs')
           ? `${DB_URL}${row.cover}`
           : row.cover
-        : 'https://via.placeholder.com/40x60?text=No+Image'
+        : 'https://via.placeholder.com/40x60?text=No+Image';
 
       return h('img', {
         src: coverSrc,
-        style:
-          'width:40px; height:60px; object-fit:cover; border-radius:4px; background:#f0f0f0;',
-      })
+        style: 'width:40px; height:60px; object-fit:cover; border-radius:4px; background:#f0f0f0;',
+      });
     },
   },
   {
@@ -92,7 +91,7 @@ const columns = [
     key: 'DONGIA',
     width: 'cover',
     render(row) {
-      return row.DONGIA?.toLocaleString('vi-VN') + 'đ'
+      return row.DONGIA?.toLocaleString('vi-VN') + 'đ';
     },
   },
   {
@@ -107,7 +106,7 @@ const columns = [
           bordered: false,
         },
         { default: () => row.SOQUYEN },
-      )
+      );
     },
   },
   {
@@ -122,14 +121,14 @@ const columns = [
           bordered: false,
         },
         { default: () => row.CONLAI },
-      )
+      );
     },
   },
   {
     title: 'Nhà xuất bản',
     key: 'MANXB',
     render(row) {
-      return getPublisherName(row.MANXB)
+      return getPublisherName(row.MANXB);
     },
   },
   {
@@ -141,10 +140,9 @@ const columns = [
     key: 'actions',
     align: 'center',
     render(row) {
-
       if (actionsDisable.value) {
-        return h('span', { style: 'color: #999; font-style: italic;' }, 'Đang xử lý...')
-      };
+        return h('span', { style: 'color: #999; font-style: italic;' }, 'Đang xử lý...');
+      }
 
       const editButton = h(
         NButton,
@@ -155,45 +153,45 @@ const columns = [
           style: 'margin-right: 8px;',
           onClick: () => openEditModal(row),
         },
-        { default: () => useIcon('fa-solid fa-pen', '14px') }
+        { default: () => useIcon('fa-solid fa-pen', '14px') },
       );
 
       const deleteButton = h(
-      resolveComponent('n-popconfirm'),
-      {
-        onPositiveClick: () => handleDeleteBook(row.MASACH),
-        positiveText: 'Xóa',
-        negativeText: 'Hủy',
-        type: 'error',
-        showIcon: true,
-        trigger: 'click', // click mới mở popconfirm
-      },
-      {
-        trigger: () =>
-          h(
-            NButton,
-            {
-              size: 'small',
-              type: 'error',
-              circle: true,
-            },
-            { default: () => useIcon('fa-solid fa-trash', '14px') }
-          ),
-        default: () => `Bạn có chắc chắn muốn xóa sách "${row.TENSACH}" không?`,
-      }
-    );
+        resolveComponent('n-popconfirm'),
+        {
+          onPositiveClick: () => handleDeleteBook(row.MASACH),
+          positiveText: 'Xóa',
+          negativeText: 'Hủy',
+          type: 'error',
+          showIcon: true,
+          trigger: 'click', // Click mở confirm
+        },
+        {
+          trigger: () =>
+            h(
+              NButton,
+              {
+                size: 'small',
+                type: 'error',
+                circle: true,
+              },
+              { default: () => useIcon('fa-solid fa-trash', '14px') },
+            ),
+          default: () => `Bạn có chắc chắn muốn xóa sách "${row.TENSACH}" không?`,
+        },
+      );
 
-    return [editButton, deleteButton];
+      return [editButton, deleteButton];
     },
   },
 ];
 
 // ====== Filtering và Paging ======
-const searchText        = ref('');
+const searchText = ref('');
 const selectedPublisher = ref('all');
-const selectedStatus    = ref('all');
-const currentPage       = ref(1);
-const pageSize          = ref(5);
+const selectedStatus = ref('all');
+const currentPage = ref(1);
+const pageSize = ref(5);
 
 // Khởi tạo ra options publisher để lọc
 const publisherOptions = computed(() => {
@@ -203,28 +201,28 @@ const publisherOptions = computed(() => {
       label: pub.TENNXB,
       value: pub.MANXB,
     })),
-  ]
+  ];
 });
 
 // Main Filtering
 const filteredBooks = computed(() => {
   return books.value.filter((book) => {
     const tennxb = getPublisherName(book.MANXB) || '';
-    
+
     // Filter theo thanh input
     const matchSearch =
       book.TENSACH?.toLowerCase().includes(searchText.value.toLowerCase()) ||
-      tennxb.toLowerCase().includes(searchText.value.toLowerCase())
-    
-      // Filter theo NXB
+      tennxb.toLowerCase().includes(searchText.value.toLowerCase());
+
+    // Filter theo NXB
     const matchPublisher =
-      selectedPublisher.value === 'all' || book.MANXB === selectedPublisher.value
-    
-      // Filter theo trạng thái
+      selectedPublisher.value === 'all' || book.MANXB === selectedPublisher.value;
+
+    // Filter theo trạng thái
     const matchStatus =
-      selectedStatus.value  === 'all' ||
+      selectedStatus.value === 'all' ||
       (selectedStatus.value === 'in-stock' && book.CONLAI > 0) ||
-      (selectedStatus.value === 'out-stock' && book.CONLAI === 0)
+      (selectedStatus.value === 'out-stock' && book.CONLAI === 0);
 
     return matchSearch && matchPublisher && matchStatus;
   });
@@ -242,9 +240,9 @@ watch(
       currentPage.value = 1;
     } else if (currentPage.value > newPageCount) {
       // Nếu trang hiện tại vượt quá số trang thì set về trang cuối
-      currentPage.value = Math.max(1, newPageCount); 
+      currentPage.value = Math.max(1, newPageCount);
     }
-  }
+  },
 );
 
 // Khi thay đổi filter thì set về trang 1
@@ -254,8 +252,8 @@ watch([searchText, selectedPublisher, selectedStatus], () => {
 
 const sortedBooks = computed(() => {
   return filteredBooks.value.slice().sort((a, b) => {
-    const numA = parseInt(a.MASACH.replace("B", ""), 10);
-    const numB = parseInt(b.MASACH.replace("B", ""), 10);
+    const numA = parseInt(a.MASACH.replace('B', ''), 10);
+    const numB = parseInt(b.MASACH.replace('B', ''), 10);
     return numA - numB;
   });
 });
@@ -267,12 +265,12 @@ const paginatedBooks = computed(() => {
 
 // ====== Các Modal ======
 const showEditModal = ref(false);
-const showAddModal  = ref(false);
-const editBook      = ref({});
-const newBook       = ref({});
+const showAddModal = ref(false);
+const editBook = ref({});
+const newBook = ref({});
 
 function openAddModal() {
-  showAddModal.value = true
+  showAddModal.value = true;
   newBook.value = {
     MASACH: '',
     TENSACH: '',
@@ -285,26 +283,25 @@ function openAddModal() {
     cover: '',
     MOTA: '',
   };
-};
+}
 
 function openEditModal(book) {
-  editBook.value = { ...book }
-  showEditModal.value = true
-};
+  editBook.value = { ...book };
+  showEditModal.value = true;
+}
 
 const handleBookSaved = (savedBook) => {
   if (!savedBook?.MASACH) return;
 
-  const index = books.value.findIndex(book => book.MASACH === savedBook.MASACH);
+  const index = books.value.findIndex((book) => book.MASACH === savedBook.MASACH);
   console.log(savedBook);
   if (index !== -1) {
-    books.value = books.value.map(
-      book => book.MASACH === savedBook.MASACH ? { ...book, ...savedBook } : book
+    books.value = books.value.map((book) =>
+      book.MASACH === savedBook.MASACH ? { ...book, ...savedBook } : book,
     );
   } else {
     books.value = [...books.value, savedBook];
   }
-
 };
 
 // ====== Function xử lý xóa sách ======
@@ -313,28 +310,27 @@ const handleDeleteBook = async (id) => {
   loading.value = true;
 
   try {
-    const res = await deleteBook(id)
+    const res = await deleteBook(id);
     messageType[res.status]?.(res.message);
 
     if (res.status === 'success') {
-      books.value = books.value.filter(book => book.MASACH !== id);
+      books.value = books.value.filter((book) => book.MASACH !== id);
     }
-// eslint-disable-next-line no-unused-vars
+    // eslint-disable-next-line no-unused-vars
   } catch (error) {
     messageType.error('Có lỗi xảy ra khi xóa sách');
   } finally {
     actionsDisable.value = false;
     loading.value = false;
-  };
+  }
 };
-
 </script>
 
 <!-- Template books -->
 <template>
   <div style="padding: 20px; background: #fff; border-radius: 8px">
     <!-- Loading -->
-    <LoadingOverlay :show="loading" />
+    <LoadingOverLay :show="loading" />
     <!-- Thanh tìm kiếm + filter -->
     <div style="display: flex; gap: 12px; margin-bottom: 16px; align-items: flex-end">
       <!-- Ô tìm kiếm -->
@@ -377,21 +373,17 @@ const handleDeleteBook = async (id) => {
     </div>
 
     <!-- Bảng dữ liệu sách -->
-    <n-data-table 
-      :key="paginatedBooks.map(b => b.MASACH).join('-')"
-      :columns="columns" 
+    <n-data-table
+      :key="paginatedBooks.map((b) => b.MASACH).join('-')"
+      :columns="columns"
       :data="paginatedBooks"
-      :pagination="false" 
-      bordered 
+      :pagination="false"
+      bordered
     />
 
     <!-- Phân trang -->
     <div style="margin-top: 16px; display: flex; justify-content: center">
-      <n-pagination
-        v-if="pageCount > 1"
-        v-model:page="currentPage"
-        :page-count="pageCount"
-      />
+      <n-pagination v-if="pageCount > 1" v-model:page="currentPage" :page-count="pageCount" />
     </div>
 
     <!-- Modal add sách-->
