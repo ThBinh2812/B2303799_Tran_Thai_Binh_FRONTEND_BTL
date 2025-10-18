@@ -63,10 +63,6 @@ const handleLogin = () => {
         Đăng nhập
     </n-button>
 
-    <p class="register-text">
-      Bạn chưa có tài khoản?
-      <router-link to="/auth/register" class="register-link">Đăng ký.</router-link>
-    </p>
   </div>
 </template>
 <style scoped>
@@ -145,24 +141,6 @@ const handleLogin = () => {
   color: #222;
   text-align: left;
   margin: 0;
-}
-
-.register-text {
-  text-align: center;
-  font-size: 14px;
-  color: #555;
-  margin-top: 8px;
-}
-
-.register-link {
-  color: #37422f;
-  font-weight: 600;
-  text-decoration: none;
-  margin-left: 4px;
-}
-
-.register-link:hover {
-  text-decoration: underline;
 }
 
 </style>

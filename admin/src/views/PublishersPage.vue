@@ -175,7 +175,7 @@ const columns = [
         </label>
         <n-input
           v-model:value="searchText"
-          placeholder="Tìm theo tên, email hoặc địa chỉ..."
+          placeholder="Tìm theo tên hoặc địa chỉ..."
           clearable
           style="width: 250px"
         />
