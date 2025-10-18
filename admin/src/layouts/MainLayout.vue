@@ -21,15 +21,19 @@ const toggleSidebar = () => {
 
   <!-- Body -->
   <n-layout has-sider style="height: 100vh;">
+
     <!-- Side bar -->
     <Sidebar :collapsed="isCollapsed"></Sidebar>
 
     <!-- Main Layout -->
     <n-layout>
+
       <!-- Nội dung -->
       <n-layout-content content-style="padding: 24px;">
+
         <!-- Render các trang -->
         <RouterView />
+        
       </n-layout-content>
 
     </n-layout>

@@ -120,7 +120,7 @@ const handleClose = () => {
     </n-form>
 
     <template #action>
-      <div class="flex justify-end gap-2 mt-4">
+      <div style="display: flex; justify-content: right; gap: 12px">
         <n-button @click="handleClose" :disabled="isSubmitting">Hủy</n-button>
         <n-button type="primary" @click="handleSubmit" :loading="isSubmitting">
           {{ props.isEdit ? 'Cập nhật' : 'Thêm mới' }}

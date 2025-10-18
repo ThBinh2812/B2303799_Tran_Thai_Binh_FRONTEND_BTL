@@ -1,17 +1,26 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import MainLayout from '@/layouts/MainLayout.vue';
-
-// import EmployeesPage from '@/views/EmployeesPage.vue';
+import AuthLayout from '@/layouts/AuthLayout.vue';
 import BooksPage from '@/views/BooksPage.vue';
 import PublishersPage from '@/views/PublishersPage.vue';
-// import StatisticsPage from '@/views/StatisticsPage.vue';
+import LoginPage from '@/views/LoginPage.vue';
+import RegisterPage from '@/views/RegisterPage.vue';
 
 const routes = [
+  {
+    path: '/auth',
+    component: AuthLayout,
+    children: [
+      {path: '', redirect: '/auth/login' }, // Trang mặc định trong /auth
+      {path: 'login', component: LoginPage },
+      {path: 'register', component: RegisterPage },
+    ]
+  },
   {
     path: '/',
     component: MainLayout,
     children: [
-      { path: '', redirect: '/books' }, // Trang mặc định
+      { path: '', redirect: '/books' }, // Trang mặc định khi truy cập /
       { path: 'books', component: BooksPage },
       { path: 'publishers', component: PublishersPage },
       // { path: 'statistics', component: StatisticsPage },
